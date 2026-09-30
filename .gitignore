@@ -4,4 +4,7 @@ __pycache__/
 .env
 .vscode/
 .idea/
-data/
+supplier-summary-txt.py
+about_files/
+contact_files/
+home_files/

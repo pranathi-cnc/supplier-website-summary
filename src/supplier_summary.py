@@ -2,18 +2,18 @@ import json
 import os
 from pathlib import Path
 
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from ollama import Client
 from pydantic import BaseModel
 
 
-# Load environment variables
 load_dotenv()
 
-OLLAMA_URL = os.getenv("OLLAMA_URL")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
+client = Client(host=os.getenv("OLLAMA_URL"))
+MODEL = os.getenv("OLLAMA_MODEL")
 
-client = Client(host=OLLAMA_URL)
+DATA_DIR = Path("data/supplier1")
 
 
 class ContactDetails(BaseModel):
@@ -26,133 +26,135 @@ class ContactDetails(BaseModel):
 
 class SupplierSummary(BaseModel):
     supplier_name: str
+    summary: str
     products_services: list[str]
     contact_details: ContactDetails
     warranty: str
     delivery_terms: str
     sources: list[str]
 
-# Read supplier pages
-DATA_DIR = Path("data/supplier1")
+
+def clean_html(file_path):
+    soup = BeautifulSoup(
+        file_path.read_text(encoding="utf-8"),
+        "html.parser"
+    )
+
+    for tag in soup([
+        "script", "style", "nav", "header", "footer",
+        "form", "button", "iframe", "noscript"
+    ]):
+        tag.decompose()
+
+    lines = []
+    for line in soup.get_text("\n", strip=True).splitlines():
+        line = " ".join(line.split())
+        if line and line not in lines:
+            lines.append(line)
+
+    return "\n".join(lines)
 
 
 def read_pages():
     pages = {}
 
-    for file_name in ["home.txt", "about.txt", "contact.txt"]:
-        file_path = DATA_DIR / file_name
-
-        text = file_path.read_text(encoding="utf-8").strip()
-
-        pages[file_name] = text
+    for name in ["home.html", "about.html", "contact.html"]:
+        pages[name] = clean_html(DATA_DIR / name)
 
     return pages
 
 
 def build_prompt(pages):
     return f"""
-Extract supplier information from the following pages.
+Extract supplier information ONLY from the website text below.
 
 Rules:
-1. Use ONLY the provided text.
-2. Do NOT guess or invent information.
-3. If information is missing, return "Not available".
-4. products_services MUST be a JSON list.
-5. contact_details MUST be a JSON object.
-6. Return ONLY valid JSON.
+- Use only the supplied text.
+- Never guess or invent information.
+- Missing information must be "Not available".
+- Ignore menus, forms, buttons and website boilerplate.
+- Return only valid JSON.
 
-Required fields:
+SUMMARY:
+Generate a short factual 2-3 sentence paragraph about the supplier.
+Include the supplier name, what the company does, main product/service
+categories, and important facts such as establishment year or
+certification when explicitly available.
+Do not list every product.
+Do not include contact, warranty or delivery information.
 
-supplier_name: string
+PRODUCTS:
+Extract the actual products mentioned.
 
-products_services: list of strings
+CONTACT:
+Extract the actual address, phone, email and contact person.
 
-contact_details:
-- address_1
-- address_2
-- phone
-- email
-- contact_person
+WARRANTY:
+Extract only an actual warranty statement.
+Otherwise return "Not available".
 
-warranty: string
+DELIVERY:
+Extract only actual delivery/shipping/dispatch information.
+Otherwise return "Not available".
 
-delivery_terms: string
+SOURCES:
+Use only:
+["home.html", "about.html", "contact.html"]
 
-sources: list of page names and URLs
+======== HOME.HTML ========
+{pages["home.html"]}
 
-SOURCE PAGE: home.txt
-{pages["home.txt"]}
+======== ABOUT.HTML ========
+{pages["about.html"]}
 
-SOURCE PAGE: about.txt
-{pages["about.txt"]}
+======== CONTACT.HTML ========
+{pages["contact.html"]}
 
-SOURCE PAGE: contact.txt
-{pages["contact.txt"]}
+Return only the JSON object.
 """
 
 
-# Call Gemma
 def generate_summary(prompt):
     response = client.chat(
-    model=OLLAMA_MODEL,
-    messages=[
-        {
-            "role": "user",
-            "content": prompt,
-        }
-    ],
-    format=SupplierSummary.model_json_schema(),
-)
+        model=MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a strict factual information extraction "
+                    "system. Never invent or infer facts."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ],
+        format=SupplierSummary.model_json_schema(),
+        options={"temperature": 0},
+    )
 
     return response.message.content
 
 
-# Main program
 def main():
     print("Reading supplier pages...")
-
     pages = read_pages()
 
-    prompt = build_prompt(pages)
-
     print("Sending information to Gemma 4...")
+    result = generate_summary(build_prompt(pages))
 
-    result = generate_summary(prompt)
+    summary = SupplierSummary.model_validate(json.loads(result))
 
-    # Convert Gemma JSON string into Python dictionary
-    data = json.loads(result)
+    output = Path("output")
+    output.mkdir(exist_ok=True)
 
-    # Validate using Pydantic
-    summary = SupplierSummary.model_validate(data)
-
-    # Save output
-    output_dir = Path("output")
-    output_dir.mkdir(exist_ok=True)
-
-    output_file = output_dir / "supplier_summary.json"
-
+    output_file = output / "supplier_summary.json"
     output_file.write_text(
         summary.model_dump_json(indent=2),
-        encoding="utf-8",
+        encoding="utf-8"
     )
 
-    # Display readable summary
     print("\n========== SUPPLIER SUMMARY ==========")
-
     print(f"\nSupplier: {summary.supplier_name}")
-
-    print("\nProducts / Services:")
-    for product in summary.products_services:
-        print(f"- {product}")
-
-    print(f"\nContact: {summary.contact_details}")
-    print(f"Warranty: {summary.warranty}")
-    print(f"Delivery: {summary.delivery_terms}")
-
-    print("\nSources:")
-    for source in summary.sources:
-        print(f"- {source}")
-
+    print(f"\n{summary.summary}")
     print(f"\nSaved to: {output_file}")
 
 

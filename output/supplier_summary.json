@@ -1,36 +1,48 @@
 {
   "supplier_name": "Bharat Industrial Supplier",
+  "summary": "Bharat Industrial Supplier is an ISO 9001:2015 accredited firm that operates as a trader, wholesaler, and distributor. Established in 1976, the company specializes in providing a wide range of Industrial Steel Fasteners, including Stainless Steel Fasteners, Anchor Fasteners, and Solar Products. They also offer world-class Industrial Fabrication services.",
   "products_services": [
     "Stainless Steel Fasteners",
     "Industrial Nut Bolt",
     "Special Nuts",
     "Anchor Fasteners",
     "Stanley Engineered Fasteners",
-    "Stainless Steel Solar Bolt And Nut",
-    "Hdg Solar bolt nut",
+    "High Tensile Fasteners",
+    "Special Bolts",
+    "Industrial Flanges",
+    "Foundation Bolts",
+    "Solar Bolt And Nut",
     "Stainless Steel Bolt, Nut, Washer",
     "Solar Bolt",
     "Hex Head Bolt",
     "Chemical Anchor Fasteners",
     "TVS Allen Bolt",
     "Hex Bolts",
-    "Steel Fasteners",
-    "Metal Fasteners",
-    "Industrial Fasteners",
-    "Industrial Fabrication services"
+    "MS Bolts & Nuts",
+    "Hot Dip Bolts",
+    "Hexagonal Bolt",
+    "Unbrako Hex Nut",
+    "Cold Forged Wing Nut",
+    "ASTMA Nut Gr 2h",
+    "Drop In Anchor",
+    "Stanley Allen Bolt 8.8 Grade",
+    "Stanley Allen Bolt 12.9 Grade",
+    "Stanley Allen Screw 8.8 Grade",
+    "Allen Bolts",
+    "Solar Fasteners - Bolt & Nut"
   ],
   "contact_details": {
-    "address_1": "Bharat Industrial Supplier",
-    "address_2": "No. 3/2, North Davidson Street, Chennai - 600001, Tamil Nadu, India",
+    "address_1": "No. 4, Periyanna Maistry Street, Chennai- 600 001, Tamil Nadu, India",
+    "address_2": "Not available",
     "phone": "07942833841",
     "email": "Not available",
-    "contact_person": "Gayathri .J"
+    "contact_person": "Ms. Gayathri"
   },
   "warranty": "Not available",
-  "delivery_terms": "Not available",
+  "delivery_terms": "Shipment can be done By Air, By Cargo, By Road, or By Sea.",
   "sources": [
-    "Home <https://www.bharatindustrialsupplier.in/>",
-    "About Us <https://www.bharatindustrialsupplier.in/profile.html>",
-    "Contact Us <https://www.bharatindustrialsupplier.in/enquiry.html>"
+    "home.html",
+    "about.html",
+    "contact.html"
   ]
 }
